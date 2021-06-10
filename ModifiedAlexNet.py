@@ -3,13 +3,16 @@
 from keras import layers
 from keras import preprocessing
 from keras import models
+import matplotlib
+import cv2
+import numpy as np
 
 # #Initialize and create the CNN
 #
 TRAINING_PATH = 'chest_xray/train'
 TESTING_PATH = 'chest_xray/test'
-TARGET_SIZE = (200, 200)
-INPUT_SHAPE = (200, 200, 3)
+TARGET_SIZE = (300, 300)
+INPUT_SHAPE = (300, 300, 3)
 #
 classifier = models.Sequential()
 classifier.add(layers.Convolution2D(96, (11, 11), strides = 4, input_shape = INPUT_SHAPE, activation = 'relu'))
@@ -30,16 +33,22 @@ classifier.add(layers.Dropout(0.5))
 classifier.add(layers.Dense(4096, activation = 'relu'))
 classifier.add(layers.Dropout(0.5))
 classifier.add(layers.Dense(1000, activation = 'relu'))
-classifier.add(layers.Dense(1, activation = 'softmax'))
-#
+classifier.add(layers.Dense(1, activation = 'sigmoid'))
+
 # #Compile classifier
 classifier.compile(optimizer = 'SGD', loss = 'binary_crossentropy', metrics = ['accuracy'])
+classifier.summary()
+
 #
 # #Fitting CNN to the images
 train_datagen = preprocessing.image.ImageDataGenerator(rescale=1./255)
 test_datagen = preprocessing.image.ImageDataGenerator(rescale=1./255)
 training_set = train_datagen.flow_from_directory(TRAINING_PATH, target_size=TARGET_SIZE, batch_size=32, class_mode='binary')
 test_set = test_datagen.flow_from_directory(TESTING_PATH, target_size=TARGET_SIZE, batch_size=32, class_mode='binary')
-classifier.fit_generator(training_set, steps_per_epoch=5216/32, epochs=25, validation_data=test_set, validation_steps = 624/32)
+classifier.fit(training_set, steps_per_epoch=5216/32, epochs=25, validation_data=test_set, validation_steps = 624/32)
 
-
+for i in range(96):
+    weights = classifier.layers[0].get_weights()[0][:,:,:,i]
+    minimum, maximum = weights.min(), weights.max()
+    weights = (np.absolute(weights) - minimum) / (maximum - minimum)
+    cv2.imwrite(f'Layer1_Filter{i}.jpg', weights*255)
