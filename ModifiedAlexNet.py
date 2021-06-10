@@ -13,6 +13,7 @@ TRAINING_PATH = 'chest_xray/train'
 TESTING_PATH = 'chest_xray/test'
 TARGET_SIZE = (300, 300)
 INPUT_SHAPE = (300, 300, 3)
+EPOCHS = 2
 #
 classifier = models.Sequential()
 classifier.add(layers.Convolution2D(96, (11, 11), strides = 4, input_shape = INPUT_SHAPE, activation = 'relu'))
@@ -45,10 +46,17 @@ train_datagen = preprocessing.image.ImageDataGenerator(rescale=1./255)
 test_datagen = preprocessing.image.ImageDataGenerator(rescale=1./255)
 training_set = train_datagen.flow_from_directory(TRAINING_PATH, target_size=TARGET_SIZE, batch_size=32, class_mode='binary')
 test_set = test_datagen.flow_from_directory(TESTING_PATH, target_size=TARGET_SIZE, batch_size=32, class_mode='binary')
-classifier.fit(training_set, steps_per_epoch=5216/32, epochs=25, validation_data=test_set, validation_steps = 624/32)
+stats = classifier.fit(training_set, steps_per_epoch=5216/32, epochs=EPOCHS, validation_data=test_set, validation_steps = 624/32)
 
+with open("stats.txt", 'w') as fp:
+    for i in range(EPOCHS):
+        fp.write(f'{stats.history["loss"][i]}\t{stats.history["accuracy"][i]}\t{stats.history["val_loss"][i]}\t{stats.history["val_accuracy"][i]}\n')
+
+
+'''
 for i in range(96):
     weights = classifier.layers[0].get_weights()[0][:,:,:,i]
     minimum, maximum = weights.min(), weights.max()
     weights = (np.absolute(weights) - minimum) / (maximum - minimum)
     cv2.imwrite(f'Layer1_Filter{i}.jpg', weights*255)
+'''
