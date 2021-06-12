@@ -1,4 +1,4 @@
-#https://www.mydatahack.com/building-alexnet-with-keras/
+#Source: https://www.mydatahack.com/building-alexnet-with-keras/
 
 from keras import layers
 from keras import preprocessing
